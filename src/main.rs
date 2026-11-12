@@ -1,7 +1,14 @@
 mod dom;
+mod html;
 
 fn main() {
-    let text = dom::text("Hello World".to_string());
-    let div = dom::elem("div".to_string(), dom::AttrMap::new(), vec![text]);
-    print!("{:#?}", div);
+    let html = "
+<html>
+    <body>
+        <div>Hello World!</div>
+    </body>
+</html>";
+
+    let result = html::parse(html.to_string());
+    print!("{:#?}", result);
 }
