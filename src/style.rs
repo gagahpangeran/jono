@@ -11,6 +11,30 @@ pub struct StyleNode<'a> {
     pub children: Vec<StyleNode<'a>>,
 }
 
+#[derive(PartialEq)]
+pub enum Display {
+    Inline,
+    Block,
+    None,
+}
+
+impl<'a> StyleNode<'a> {
+    pub fn value(&self, name: &str) -> Option<css::Value> {
+        self.specified_values.get(name).map(|v| v.clone())
+    }
+
+    pub fn display(&self) -> Display {
+        match self.value("display") {
+            Some(css::Value::Keyword(s)) => match &*s {
+                "block" => Display::Block,
+                "none" => Display::None,
+                _ => Display::Inline,
+            },
+            _ => Display::Inline,
+        }
+    }
+}
+
 fn matches(elem: &dom::ElementData, selector: &css::Selector) -> bool {
     match selector {
         css::Selector::Simple(s) => matches_simple_selector(elem, s),
