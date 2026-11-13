@@ -33,6 +33,11 @@ impl<'a> StyleNode<'a> {
             _ => Display::Inline,
         }
     }
+
+    pub fn lookup(&self, name: &str, fallback_name: &str, default: &css::Value) -> css::Value {
+        self.value(name)
+            .unwrap_or_else(|| self.value(fallback_name).unwrap_or_else(|| default.clone()))
+    }
 }
 
 fn matches(elem: &dom::ElementData, selector: &css::Selector) -> bool {
