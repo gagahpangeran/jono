@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub type AttrMap = HashMap<String, String>;
 
@@ -39,5 +39,18 @@ pub fn comment(data: String) -> Node {
     Node {
         children: Vec::new(),
         node_type: NodeType::Comment(data),
+    }
+}
+
+impl ElementData {
+    pub fn id(&self) -> Option<&String> {
+        self.attrs.get("id")
+    }
+
+    pub fn classes(&self) -> HashSet<&str> {
+        match self.attrs.get("class") {
+            Some(classlist) => classlist.split(' ').collect(),
+            None => HashSet::new(),
+        }
     }
 }
