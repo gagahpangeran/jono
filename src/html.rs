@@ -1,16 +1,40 @@
-use crate::{dom, parser};
+use crate::{css, dom, parser, style};
 
-pub fn parse(source: String) -> dom::Node {
+pub fn parse(source: String) -> Document {
     let mut nodes = parser::Parser {
         pos: 0,
         input: source,
     }
     .parse_nodes();
 
-    if nodes.len() == 1 {
-        return nodes.remove(0);
+    let root_node = if nodes.len() == 1 {
+        nodes.remove(0)
     } else {
-        return dom::elem("html".to_string(), dom::AttrMap::new(), nodes);
+        dom::elem("html".to_string(), dom::AttrMap::new(), nodes)
+    };
+
+    let stylesheet = css::parse(get_style_content(&root_node));
+
+    Document {
+        root_node,
+        stylesheet,
+    }
+}
+
+fn get_style_content(node: &dom::Node) -> String {
+    node.find_element("style")
+        .map(dom::Node::text_content)
+        .unwrap_or_default()
+}
+
+pub struct Document {
+    pub root_node: dom::Node,
+    pub stylesheet: css::Stylesheet,
+}
+
+impl Document {
+    pub fn style_tree(&self) -> style::StyleNode<'_> {
+        style::style_tree(&self.root_node, &self.stylesheet)
     }
 }
 

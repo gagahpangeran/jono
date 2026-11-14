@@ -42,6 +42,23 @@ pub fn comment(data: String) -> Node {
     }
 }
 
+impl Node {
+    pub fn find_element(&self, tag: &str) -> Option<&Node> {
+        if matches!(&self.node_type, NodeType::Element(e) if e.tag_name == tag) {
+            return Some(self);
+        }
+
+        self.children.iter().find_map(|c| c.find_element(tag))
+    }
+
+    pub fn text_content(&self) -> String {
+        match self.node_type {
+            NodeType::Text(ref t) => t.clone(),
+            _ => self.children.iter().map(Node::text_content).collect(),
+        }
+    }
+}
+
 impl ElementData {
     pub fn id(&self) -> Option<&String> {
         self.attrs.get("id")
