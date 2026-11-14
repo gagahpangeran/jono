@@ -1,7 +1,7 @@
-use crate::dom;
+use crate::{dom, parser};
 
 pub fn parse(source: String) -> dom::Node {
-    let mut nodes = Parser {
+    let mut nodes = parser::Parser {
         pos: 0,
         input: source,
     }
@@ -14,50 +14,7 @@ pub fn parse(source: String) -> dom::Node {
     }
 }
 
-struct Parser {
-    pos: usize,
-    input: String,
-}
-
-impl Parser {
-    fn next_char(&self) -> char {
-        self.input[self.pos..].chars().next().unwrap()
-    }
-
-    fn starts_with(&self, s: &str) -> bool {
-        self.input[self.pos..].starts_with(s)
-    }
-
-    fn expect(&mut self, s: &str) {
-        if self.starts_with(s) {
-            self.pos += s.len();
-        } else {
-            panic!("Expected {:?} at byte {} but it was not found", s, self.pos);
-        }
-    }
-
-    fn eof(&self) -> bool {
-        self.pos >= self.input.len()
-    }
-
-    fn consume_char(&mut self) -> char {
-        let c = self.next_char();
-        self.pos += c.len_utf8();
-        return c;
-    }
-
-    fn consume_while(&mut self, test: impl Fn(char) -> bool) -> String {
-        let mut result = String::new();
-        while !self.eof() && test(self.next_char()) {
-            result.push(self.consume_char());
-        }
-        return result;
-    }
-
-    fn consume_whitespace(&mut self) {
-        self.consume_while(char::is_whitespace);
-    }
-
+impl parser::Parser {
     fn parse_name(&mut self) -> String {
         self.consume_while(|c| matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9'))
     }
@@ -93,7 +50,7 @@ impl Parser {
         let name = self.parse_name();
         self.expect("=");
         let value = self.parse_attr_value();
-        return (name, value);
+        (name, value)
     }
 
     fn parse_attr_value(&mut self) -> String {
@@ -102,7 +59,7 @@ impl Parser {
         let value = self.consume_while(|c| c != open_quote);
         let close_quote = self.consume_char();
         assert_eq!(open_quote, close_quote);
-        return value;
+        value
     }
 
     fn parse_attributes(&mut self) -> dom::AttrMap {
@@ -115,7 +72,7 @@ impl Parser {
             let (name, value) = self.parse_attr();
             attributes.insert(name, value);
         }
-        return attributes;
+        attributes
     }
 
     fn parse_nodes(&mut self) -> Vec<dom::Node> {
@@ -127,6 +84,6 @@ impl Parser {
             }
             nodes.push(self.parse_node());
         }
-        return nodes;
+        nodes
     }
 }

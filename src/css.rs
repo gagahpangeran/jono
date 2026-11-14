@@ -1,3 +1,5 @@
+use crate::parser;
+
 #[derive(Debug)]
 pub struct Stylesheet {
     pub rules: Vec<Rule>,
@@ -57,7 +59,7 @@ impl Selector {
         let a = simple.id.iter().count();
         let b = simple.class.len();
         let c = simple.tag_name.iter().count();
-        return (a, b, c);
+        (a, b, c)
     }
 }
 
@@ -71,7 +73,7 @@ impl Value {
 }
 
 pub fn parse(source: String) -> Stylesheet {
-    let mut parser = Parser {
+    let mut parser = parser::Parser {
         pos: 0,
         input: source,
     };
@@ -80,44 +82,11 @@ pub fn parse(source: String) -> Stylesheet {
     }
 }
 
-struct Parser {
-    pos: usize,
-    input: String,
+fn valid_identifier_char(c: char) -> bool {
+    matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_')
 }
 
-impl Parser {
-    fn consume_whitespace(&mut self) {
-        self.consume_while(char::is_whitespace);
-    }
-
-    fn consume_while(&mut self, test: impl Fn(char) -> bool) -> String {
-        let mut result = String::new();
-        while !self.eof() && test(self.next_char()) {
-            result.push(self.consume_char());
-        }
-        result
-    }
-
-    fn consume_char(&mut self) -> char {
-        let c = self.next_char();
-        self.pos += c.len_utf8();
-        c
-    }
-
-    fn expect_char(&mut self, c: char) {
-        if self.consume_char() != c {
-            panic!("Expected {:?} at byte {} but it was not found", c, self.pos);
-        }
-    }
-
-    fn next_char(&self) -> char {
-        self.input[self.pos..].chars().next().unwrap()
-    }
-
-    fn eof(&self) -> bool {
-        self.pos >= self.input.len()
-    }
-
+impl parser::Parser {
     fn parse_rules(&mut self) -> Vec<Rule> {
         let mut rules = Vec::new();
         loop {
@@ -151,8 +120,9 @@ impl Parser {
                 c => panic!("Unexpected character {} in selector list", c),
             }
         }
-        selectors.sort_by(|a, b| b.specificity().cmp(&a.specificity()));
-        return selectors;
+
+        selectors.sort_by_key(|s| s.specificity());
+        selectors
     }
 
     fn parse_simple_selector(&mut self) -> SimpleSelector {
@@ -184,7 +154,7 @@ impl Parser {
     }
 
     fn parse_declarations(&mut self) -> Vec<Declaration> {
-        self.expect_char('{');
+        self.expect("{");
         let mut declarations = Vec::new();
         loop {
             self.consume_whitespace();
@@ -200,11 +170,11 @@ impl Parser {
     fn parse_declaration(&mut self) -> Declaration {
         let name = self.parse_identifier();
         self.consume_whitespace();
-        self.expect_char(':');
+        self.expect(":");
         self.consume_whitespace();
         let value = self.parse_value();
         self.consume_whitespace();
-        self.expect_char(';');
+        self.expect(";");
 
         Declaration { name, value }
     }
@@ -235,7 +205,7 @@ impl Parser {
     }
 
     fn parse_color(&mut self) -> Value {
-        self.expect_char('#');
+        self.expect("#");
         Value::ColorValue(Color {
             r: self.parse_hex_pair(),
             g: self.parse_hex_pair(),
@@ -253,8 +223,4 @@ impl Parser {
     fn parse_identifier(&mut self) -> String {
         self.consume_while(valid_identifier_char)
     }
-}
-
-fn valid_identifier_char(c: char) -> bool {
-    matches!(c, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_')
 }

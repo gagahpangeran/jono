@@ -9,6 +9,7 @@ mod dom;
 mod html;
 mod layout;
 mod painting;
+mod parser;
 mod style;
 
 fn main() {
