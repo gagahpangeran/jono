@@ -20,7 +20,7 @@ pub enum Display {
 
 impl<'a> StyleNode<'a> {
     pub fn value(&self, name: &str) -> Option<css::Value> {
-        self.specified_values.get(name).map(|v| v.clone())
+        self.specified_values.get(name).cloned()
     }
 
     pub fn display(&self) -> Display {
@@ -39,6 +39,23 @@ impl<'a> StyleNode<'a> {
             .unwrap_or_else(|| self.value(fallback_name).unwrap_or_else(|| default.clone()))
     }
 }
+
+pub fn style_tree<'a>(root: &'a dom::Node, stylesheet: &'a css::Stylesheet) -> StyleNode<'a> {
+    StyleNode {
+        node: root,
+        specified_values: match root.node_type {
+            dom::NodeType::Element(ref elem) => specified_values(elem, stylesheet),
+            _ => PropertyMap::new(),
+        },
+        children: root
+            .children
+            .iter()
+            .map(|child| style_tree(child, stylesheet))
+            .collect(),
+    }
+}
+
+type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
 
 fn matches(elem: &dom::ElementData, selector: &css::Selector) -> bool {
     match selector {
@@ -63,10 +80,8 @@ fn matches_simple_selector(elem: &dom::ElementData, selector: &css::SimpleSelect
         return false;
     }
 
-    return true;
+    true
 }
-
-type MatchedRule<'a> = (css::Specificity, &'a css::Rule);
 
 fn match_rule<'a>(elem: &dom::ElementData, rule: &'a css::Rule) -> Option<MatchedRule<'a>> {
     rule.selectors
@@ -97,19 +112,4 @@ fn specified_values(elem: &dom::ElementData, stylesheet: &css::Stylesheet) -> Pr
         }
     }
     values
-}
-
-pub fn style_tree<'a>(root: &'a dom::Node, stylesheet: &'a css::Stylesheet) -> StyleNode<'a> {
-    StyleNode {
-        node: root,
-        specified_values: match root.node_type {
-            dom::NodeType::Element(ref elem) => specified_values(elem, stylesheet),
-            _ => PropertyMap::new(),
-        },
-        children: root
-            .children
-            .iter()
-            .map(|child| style_tree(child, stylesheet))
-            .collect(),
-    }
 }
