@@ -45,6 +45,10 @@ pub fn style_tree<'a>(root: &'a dom::Node, stylesheet: &'a css::Stylesheet) -> S
         node: root,
         specified_values: match root.node_type {
             dom::NodeType::Element(ref elem) => specified_values(elem, stylesheet),
+            dom::NodeType::Comment(_) => PropertyMap::from([(
+                "display".to_string(),
+                css::Value::Keyword("none".to_string()),
+            )]),
             _ => PropertyMap::new(),
         },
         children: root

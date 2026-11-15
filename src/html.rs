@@ -44,7 +44,9 @@ impl parser::Parser {
     }
 
     fn parse_node(&mut self) -> dom::Node {
-        if self.starts_with("<") {
+        if self.starts_with("<!--") {
+            self.parse_comment()
+        } else if self.starts_with("<") {
             self.parse_element()
         } else {
             self.parse_text()
@@ -53,6 +55,19 @@ impl parser::Parser {
 
     fn parse_text(&mut self) -> dom::Node {
         dom::text(self.consume_while(|c| c != '<'))
+    }
+
+    fn parse_comment(&mut self) -> dom::Node {
+        self.expect("<!--");
+
+        let mut text = String::new();
+        while !self.eof() && !self.starts_with("-->") {
+            text.push(self.consume_char());
+        }
+
+        self.expect("-->");
+
+        dom::comment(text)
     }
 
     fn parse_element(&mut self) -> dom::Node {
