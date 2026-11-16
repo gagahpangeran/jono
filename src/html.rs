@@ -13,10 +13,8 @@ pub fn parse(source: String) -> Document {
         dom::elem("html".to_string(), dom::AttrMap::new(), nodes)
     };
 
-    let stylesheets = vec![
-        css::user_agent_stylesheet(),
-        css::parse(get_style_content(&root_node)),
-    ];
+    let mut stylesheets = vec![css::user_agent_stylesheet()];
+    stylesheets.extend(get_author_stylesheets(&root_node));
 
     Document {
         root_node,
@@ -24,10 +22,11 @@ pub fn parse(source: String) -> Document {
     }
 }
 
-fn get_style_content(node: &dom::Node) -> String {
-    node.find_element("style")
-        .map(dom::Node::text_content)
-        .unwrap_or_default()
+fn get_author_stylesheets(root: &dom::Node) -> Vec<css::Stylesheet> {
+    root.find_elements("style")
+        .into_iter()
+        .map(|node| css::parse(node.text_content()))
+        .collect()
 }
 
 pub struct Document {

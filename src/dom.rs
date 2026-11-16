@@ -43,12 +43,18 @@ pub fn comment(data: String) -> Node {
 }
 
 impl Node {
-    pub fn find_element(&self, tag: &str) -> Option<&Node> {
+    pub fn find_elements(&self, tag: &str) -> Vec<&Node> {
+        let mut nodes = Vec::new();
+
         if matches!(&self.node_type, NodeType::Element(e) if e.tag_name == tag) {
-            return Some(self);
+            nodes.push(self);
         }
 
-        self.children.iter().find_map(|c| c.find_element(tag))
+        for child in &self.children {
+            nodes.extend(child.find_elements(tag));
+        }
+
+        nodes
     }
 
     pub fn text_content(&self) -> String {
