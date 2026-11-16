@@ -2,6 +2,7 @@ use crate::parser;
 
 #[derive(Debug)]
 pub struct Stylesheet {
+    pub origin: Origin,
     pub rules: Vec<Rule>,
 }
 
@@ -53,6 +54,12 @@ impl Copy for Color {}
 
 pub type Specificity = (usize, usize, usize);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum Origin {
+    UserAgent,
+    Author,
+}
+
 impl Selector {
     pub fn specificity(&self) -> Specificity {
         let Selector::Simple(ref simple) = *self;
@@ -78,8 +85,15 @@ pub fn parse(source: String) -> Stylesheet {
         input: source,
     };
     Stylesheet {
+        origin: Origin::Author,
         rules: parser.parse_rules(),
     }
+}
+
+pub fn user_agent_stylesheet() -> Stylesheet {
+    let mut stylesheet = parse(include_str!("user-agent.css").to_string());
+    stylesheet.origin = Origin::UserAgent;
+    stylesheet
 }
 
 fn valid_identifier_char(c: char) -> bool {

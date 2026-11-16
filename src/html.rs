@@ -13,11 +13,14 @@ pub fn parse(source: String) -> Document {
         dom::elem("html".to_string(), dom::AttrMap::new(), nodes)
     };
 
-    let stylesheet = css::parse(get_style_content(&root_node));
+    let stylesheets = vec![
+        css::user_agent_stylesheet(),
+        css::parse(get_style_content(&root_node)),
+    ];
 
     Document {
         root_node,
-        stylesheet,
+        stylesheets,
     }
 }
 
@@ -29,12 +32,12 @@ fn get_style_content(node: &dom::Node) -> String {
 
 pub struct Document {
     pub root_node: dom::Node,
-    pub stylesheet: css::Stylesheet,
+    pub stylesheets: Vec<css::Stylesheet>,
 }
 
 impl Document {
     pub fn style_tree(&self) -> style::StyleNode<'_> {
-        style::style_tree(&self.root_node, &self.stylesheet)
+        style::style_tree(&self.root_node, &self.stylesheets)
     }
 }
 

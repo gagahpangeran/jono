@@ -1,0 +1,11 @@
+head, style, title {
+    display: none;
+}
+
+html, body {
+    display: block;
+}
+
+div {
+    display: block;
+}
